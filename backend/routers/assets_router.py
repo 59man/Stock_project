@@ -2,35 +2,45 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import AssetCreate, AssetResponse
+from models import AssetCreate, AssetResponse, AssetDB
 from crud.assets import (
-    create_asset,
+    create_asset_db,
     get_asset_by_id,
-    get_asset_by_symbol,
     list_assets,
     delete_asset
 )
+
+from services.isin_lookup import get_stock_info_from_isin
 
 router = APIRouter(prefix="/assets", tags=["Assets"])
 
 
 # ============================================================
-# Create a new asset
+# Create Asset (auto-filled using ISIN lookup)
 # ============================================================
 
 @router.post("/", response_model=AssetResponse)
 def api_create_asset(asset: AssetCreate, db: Session = Depends(get_db)):
-    # Prevent duplicate ticker symbols
-    existing = get_asset_by_symbol(db, asset.symbol)
-    if existing:
-        raise HTTPException(status_code=400, detail="Asset with this symbol already exists")
 
-    new_asset = create_asset(db, asset)
-    return new_asset
+    info = get_stock_info_from_isin(
+        isin=asset.isin,
+        manual_name=asset.name
+    )
+
+    asset_data = asset.dict()
+    asset_data["name"] = info["name"]
+    asset_data["symbol"] = info["symbol"] or asset.symbol  # user-defined backup
+    asset_data["type"] = info["type"]
+    asset_data["provider"] = info["provider"] or "Unknown"
+    asset_data["currency"] = info["currency"] or "UNKNOWN"
+
+    # Save to DB
+    db_asset = create_asset_db(db, AssetDB(**asset_data))
+    return db_asset
 
 
 # ============================================================
-# Get asset by ID
+# Get Asset by ID
 # ============================================================
 
 @router.get("/{asset_id}", response_model=AssetResponse)
@@ -51,7 +61,7 @@ def api_list_assets(db: Session = Depends(get_db)):
 
 
 # ============================================================
-# Delete asset
+# Delete Asset
 # ============================================================
 
 @router.delete("/{asset_id}")
