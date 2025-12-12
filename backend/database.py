@@ -1,21 +1,41 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-'''script for creating databeses '''
+# -----------------------------
+# Database URL
+# -----------------------------
+# This will create (or use) backend/Data.db
+SQLALCHEMY_DATABASE_URL = "sqlite:///./Data.db"  # relative to backend/
 
+# -----------------------------
+# Create SQLAlchemy engine
+# -----------------------------
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args={"check_same_thread": False}  # SQLite specific
+)
 
-import sqlite3
-from pathlib import Path
+# -----------------------------
+# Create SessionLocal
+# -----------------------------
+# Used in CRUD and FastAPI dependency
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-def database_creation():
-    conn = sqlite3.connect('backend/Data.db')
-    c = conn.cursor()
-    sql_dir = Path("backend/sql_tables")
+# -----------------------------
+# Base class for models
+# -----------------------------
+Base = declarative_base()
 
-    for sql_file in sql_dir.glob("*.sql"):
-        with open(sql_file, "r", encoding="utf-8") as f:
-            sql_script = f.read()
-            print(f"Executing: {sql_file.name}")
-            c.executescript(sql_script)
-
-    conn.commit()
-    conn.close()
-
+# -----------------------------
+# Dependency for FastAPI
+# -----------------------------
+def get_db():
+    """
+    FastAPI dependency.
+    Provides a session for the request and closes it automatically.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
