@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from models import LotDB, LotCreate
+from sqlalchemy import func
 
 # Create a new lot / transaction
 def create_lot(db: Session, lot: LotCreate):
@@ -31,3 +32,11 @@ def delete_lot(db: Session, lot_id: int):
         db.commit()
         return True
     return False
+
+def get_asset_position(db: Session, asset_id: int) -> float:
+    result = (
+        db.query(func.coalesce(func.sum(LotDB.quantity), 0.0))
+        .filter(LotDB.asset_id == asset_id)
+        .scalar()
+    )
+    return float(result)

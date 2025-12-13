@@ -80,3 +80,10 @@ class LotResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        
+class MarketPriceResponse(BaseModel):
+    asset_id: int
+    symbol: str
+    price: float | None
+    currency: str | None
+    timestamp: datetime | None

@@ -5,19 +5,11 @@ from models import AssetDB, AssetCreate
 # Create a new asset
 # ============================================================
 
-def create_asset(db: Session, asset: AssetCreate) -> AssetDB:
-    db_asset = AssetDB(
-        name=asset.name,
-        symbol=asset.symbol,
-        isin=asset.isin,
-        type=asset.type,
-        provider=asset.provider,
-        currency=asset.currency
-    )
-    db.add(db_asset)
+def create_asset(db: Session, asset: AssetDB) -> AssetDB:
+    db.add(asset)
     db.commit()
-    db.refresh(db_asset)
-    return db_asset
+    db.refresh(asset)
+    return asset
 
 
 # ============================================================

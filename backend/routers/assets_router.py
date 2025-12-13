@@ -1,16 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from crud.lots import get_asset_position
 from database import get_db
 from models import AssetCreate, AssetResponse, AssetDB
 from crud.assets import (
     create_asset_db,
     get_asset_by_id,
     list_assets,
-    delete_asset
+    delete_asset,
+    get_asset_by_symbol
 )
 
 from services.isin_lookup import get_stock_info_from_isin
+from utils.market_price import get_current_market_price
+
 
 router = APIRouter(prefix="/assets", tags=["Assets"])
 
@@ -70,3 +73,44 @@ def api_delete_asset(asset_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Asset not found")
     return {"detail": "Asset deleted"}
+
+
+
+@router.get("/{asset_id}/price")
+def api_get_asset_price(asset_id: int, db: Session = Depends(get_db)):
+
+    asset = get_asset_by_id(db, asset_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    if not asset.symbol:
+        raise HTTPException(
+            status_code=400,
+            detail="Asset has no ticker symbol (manual fund)"
+        )
+
+    price_info = get_current_market_price(asset.symbol)
+
+    return {
+        "asset_id": asset.id,
+        "symbol": asset.symbol,
+        "price": price_info["price"],
+        "currency": price_info["currency"] or asset.currency,
+        "timestamp": price_info["timestamp"],
+    }
+
+@router.get("/{asset_id}/position")
+def api_get_asset_position(asset_id: int, db: Session = Depends(get_db)):
+
+    asset = get_asset_by_id(db, asset_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    quantity = get_asset_position(db, asset_id)
+
+    return {
+        "asset_id": asset.id,
+        "symbol": asset.symbol,
+        "quantity": quantity,
+        "currency": asset.currency,
+    }
