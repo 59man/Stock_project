@@ -4,14 +4,14 @@ from crud.lots import get_asset_position
 from database import get_db
 from models import AssetCreate, AssetResponse, AssetDB
 from crud.assets import (
-    create_asset_db,
+    create_asset,
     get_asset_by_id,
     list_assets,
     delete_asset,
     get_asset_by_symbol
 )
 
-from services.isin_lookup import get_stock_info_from_isin
+from utils.isin_lookup import get_stock_info_from_isin
 from utils.market_price import get_current_market_price
 
 

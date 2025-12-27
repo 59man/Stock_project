@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime
 from database import Base
 from datetime import datetime
 from sqlalchemy.orm import relationship 
+from sqlalchemy.sql import func
 # -----------------------------
 # Lots / Transactions Table
 # -----------------------------
@@ -11,12 +12,13 @@ class LotDB(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     asset_id = Column(Integer, ForeignKey("assets.id"), nullable=False)
+
     quantity = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
     currency = Column(String, nullable=True)
-    bought_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relationship to AssetDB (optional, for ORM queries)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
     asset = relationship("AssetDB", back_populates="lots")
 
 
@@ -60,7 +62,7 @@ class AssetResponse(BaseModel):
     currency: str | None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class LotCreate(BaseModel):
     asset_id: int
@@ -79,8 +81,8 @@ class LotResponse(BaseModel):
     bought_at: datetime
 
     class Config:
-        orm_mode = True
-        
+        from_attributes = True
+
 class MarketPriceResponse(BaseModel):
     asset_id: int
     symbol: str

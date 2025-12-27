@@ -35,3 +35,10 @@ Chart.js
 
 User → adds asset → Frontend → sends request → FastAPI endpoint
 → saves to SQLite → fetches price → returns response → shown on HTML page
+
+
+
+
+
+
+source venv/bin/activate
