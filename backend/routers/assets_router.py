@@ -25,22 +25,24 @@ router = APIRouter(prefix="/assets", tags=["Assets"])
 @router.post("/", response_model=AssetResponse)
 def api_create_asset(asset: AssetCreate, db: Session = Depends(get_db)):
 
+    # Use manual_name from the model
     info = get_stock_info_from_isin(
         isin=asset.isin,
-        manual_name=asset.name
+        manual_name=asset.manual_name  # <-- fixed
     )
 
-    asset_data = asset.dict()
-    asset_data["name"] = info["name"]
-    asset_data["symbol"] = info["symbol"] or asset.symbol  # user-defined backup
-    asset_data["type"] = info["type"]
-    asset_data["provider"] = info["provider"] or "Unknown"
-    asset_data["currency"] = info["currency"] or "UNKNOWN"
+    asset_data = {
+        "name": info["name"],
+        "symbol": info["symbol"] or None,
+        "isin": asset.isin,
+        "type": info["type"],
+        "provider": info.get("provider") or "Unknown",
+        "currency": info.get("currency") or "UNKNOWN"
+    }
 
     # Save to DB
-    db_asset = create_asset_db(db, AssetDB(**asset_data))
+    db_asset = create_asset(db, AssetDB(**asset_data))
     return db_asset
-
 
 # ============================================================
 # Get Asset by ID

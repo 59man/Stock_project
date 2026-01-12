@@ -41,4 +41,4 @@ User → adds asset → Frontend → sends request → FastAPI endpoint
 
 
 
-source venv/bin/activate
+source venv/bin/activate.fish
