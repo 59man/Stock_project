@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import AssetDB, AssetCreate
+from models import AssetDB, AssetCreate, AssetUpdate
 
 # ============================================================
 # Create a new asset
@@ -56,3 +56,21 @@ def delete_asset(db: Session, asset_id: int) -> bool:
     db.delete(asset)
     db.commit()
     return True
+
+# ============================================================
+# Update asset
+# ============================================================
+
+
+def update_asset(db: Session, asset_id: int, data: AssetUpdate) -> AssetDB | None:
+    asset = get_asset_by_id(db, asset_id)
+    if not asset:
+        return None
+
+    asset.name = data.name
+    asset.symbol = data.symbol
+    asset.currency = data.currency
+
+    db.commit()
+    db.refresh(asset)
+    return asset

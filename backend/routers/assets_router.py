@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from crud.lots import get_asset_position
 from database import get_db
-from models import AssetCreate, AssetResponse, AssetDB
+from models import AssetCreate, AssetResponse, AssetDB,AssetUpdate
 from crud.assets import (
     create_asset,
     get_asset_by_id,
@@ -116,3 +116,15 @@ def api_get_asset_position(asset_id: int, db: Session = Depends(get_db)):
         "quantity": quantity,
         "currency": asset.currency,
     }
+
+
+@router.put("/{asset_id}", response_model=AssetResponse)
+def api_update_asset(
+    asset_id: int,
+    asset: AssetUpdate,
+    db: Session = Depends(get_db),
+):
+    updated = update_asset(db, asset_id, asset)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return updated

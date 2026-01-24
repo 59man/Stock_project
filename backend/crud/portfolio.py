@@ -82,3 +82,27 @@ def get_portfolio(db: Session):
             if total_invested else 0
         ),
     }
+
+def get_asset_portfolio(db: Session, asset_id: int):
+    result = (
+        db.query(
+            func.sum(LotDB.quantity).label("total_quantity"),
+            func.sum(LotDB.quantity * LotDB.price).label("total_invested"),
+        )
+        .filter(LotDB.asset_id == asset_id)
+        .one()
+    )
+
+    total_quantity = result.total_quantity or 0
+    total_invested = result.total_invested or 0
+
+    avg_price = (
+        total_invested / total_quantity if total_quantity > 0 else None
+    )
+
+    return {
+        "asset_id": asset_id,
+        "total_quantity": total_quantity,
+        "total_invested": total_invested,
+        "average_price": avg_price,
+    }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy import Column, Integer, Float, String, ForeignKey, DateTime
 from database import Base
 from datetime import datetime
@@ -17,7 +17,7 @@ class LotDB(Base):
     price = Column(Float, nullable=False)
     currency = Column(String, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    bought_at = Column(DateTime, nullable=True)  # 👈 ADD THIS
 
     asset = relationship("AssetDB", back_populates="lots")
 
@@ -71,14 +71,21 @@ class LotCreate(BaseModel):
     currency: str | None = None
     bought_at: datetime | None = None
 
-
 class LotResponse(BaseModel):
     id: int
     asset_id: int
     quantity: float
     price: float
     currency: str | None = None
-    bought_at: datetime
+    bought_at: datetime | None = None
+
+    @validator("bought_at", pre=True)
+    def parse_bought_at(cls, v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            return datetime.fromisoformat(v)
+        return v
 
     class Config:
         from_attributes = True
@@ -89,3 +96,17 @@ class MarketPriceResponse(BaseModel):
     price: float | None
     currency: str | None
     timestamp: datetime | None
+
+class AssetUpdate(BaseModel):
+    name: str
+    symbol: str | None = None
+    currency: str | None = None
+
+class AssetPortfolioResponse(BaseModel):
+    asset_id: int
+    total_quantity: float
+    total_invested: float
+    average_price: float | None = None
+
+    class Config:
+        from_attributes = True

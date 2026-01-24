@@ -9,7 +9,7 @@ def create_lot(db: Session, lot: LotCreate):
         quantity=lot.quantity,
         price=lot.price,
         currency=lot.currency,
-        bought_at=lot.bought_at or None
+        bought_at=lot.bought_at,
     )
     db.add(db_lot)
     db.commit()
@@ -40,3 +40,6 @@ def get_asset_position(db: Session, asset_id: int) -> float:
         .scalar()
     )
     return float(result)
+
+def list_lots_by_asset(db: Session, asset_id: int) -> list[LotDB]:
+    return db.query(LotDB).filter(LotDB.asset_id == asset_id).all()

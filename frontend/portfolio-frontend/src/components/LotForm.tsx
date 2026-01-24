@@ -1,56 +1,84 @@
 import { useState } from "react";
+import type { LotCreate } from "../types/lot";
 
-interface LotFormProps {
+
+// LotForm.tsx
+interface Props {
   assetId: number;
+  onLotAdded?: () => void; // ✅ optional callback for after adding a lot
 }
 
-export default function LotForm({ assetId }: LotFormProps) {
-  const [quantity, setQuantity] = useState<number>(0);
-  const [price, setPrice] = useState<number>(0);
+export default function LotForm({ assetId, onLotAdded }: Props) {
+  const [quantity, setQuantity] = useState("");
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [boughtAt, setBoughtAt] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const payload: LotCreate = {
+      asset_id: assetId,
+      quantity: Number(quantity),
+      price: Number(price),
+      currency,
+      bought_at: boughtAt ? new Date(boughtAt).toISOString() : null,
+    };
+
     try {
-      const res = await fetch(`http://127.0.0.1:8000/lots/`, {
+      await fetch("http://127.0.0.1:8000/lots/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          asset_id: assetId,
-          quantity,
-          price,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to add lot");
+      setQuantity("");
+      setPrice("");
+      setBoughtAt(null);
 
-      setQuantity(0);
-      setPrice(0);
-      alert("Lot added!");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to add lot. Check backend!");
+      if (onLotAdded) onLotAdded(); // ✅ trigger refresh
+    } catch (err: unknown) {
+      if (err instanceof Error) alert("Failed to add lot: " + err.message);
+      else alert("Failed to add lot: unknown error");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2">
-      <h2 className="text-2xl font-bold mb-2">Add Lot</h2>
+    <form onSubmit={handleSubmit} className="mt-6 p-4 border rounded">
+      <h3 className="text-lg font-semibold mb-2">Add Lot</h3>
+
       <input
+        className="border p-2 mr-2"
         type="number"
-        value={quantity}
-        onChange={(e) => setQuantity(parseFloat(e.target.value))}
+        step="any"
         placeholder="Quantity"
-        className="border p-2 w-full"
+        value={quantity}
+        onChange={(e) => setQuantity(e.target.value)}
+        required
       />
       <input
+        className="border p-2 mr-2"
         type="number"
-        value={price}
-        onChange={(e) => setPrice(parseFloat(e.target.value))}
+        step="any"
         placeholder="Price"
-        className="border p-2 w-full"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        required
       />
-      <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
+      <input
+        className="border p-2 mr-2"
+        placeholder="Currency"
+        value={currency}
+        onChange={(e) => setCurrency(e.target.value)}
+      />
+      <input
+        className="border p-2 mr-2"
+        type="date"
+        value={boughtAt ?? ""}
+        onChange={(e) => setBoughtAt(e.target.value || null)}
+      />
+
+      <button className="bg-green-600 text-white px-4 py-2 rounded">
         Add Lot
       </button>
     </form>
